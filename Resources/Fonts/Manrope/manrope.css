@@ -1,0 +1,85 @@
+/*
+    © 2019, Dark Orb.
+
+    The license version - 1.0
+
+    This license is hereby grants to any person who obtained a copy of this software the next rights to:
+    1. Use and do reverse-engineering of compiled version of this software at no cost, without any restrictions, in non-commercial and commercial purposes
+    2. Use source codes of this software at no cost but with the limitations - source codes available only for non-commercial, academic and / or scientific purposes
+    3. Copy and distribute without any fee
+    4. Create a copy of the original repository and / or create own derivative software for non-commercial,  academic and / or scientific purposes only
+
+    This license is require to:
+    1. Keep the full license text without any changes
+    2. The license text must be included once in a file called 'License' which placed in the root directory of the software and in all source files of the software
+
+    This license is deny to:
+    1. Change license of the derivative software
+    2. Use the copyright holder name and name of any contributor of this software for advertising derivative software without legally certified permission
+    3. Sell this software without an author legally certified permission 
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+*/
+
+@charset "UTF-8";
+@font-face {
+  font-family: "Manrope";
+  src: url("manrope-extrabold.woff2") format("woff2"), /* Modern browsers */
+  url("manrope-extrabold.woff") format("woff"), /* Legacy browsers */
+  url("manrope-extrabold.otf") format("truetype"); /* Android, iOS */
+  font-style: normal;
+  font-weight: 800; }
+@font-face {
+  font-family: "Manrope";
+  src: url("manrope-bold.woff2") format("woff2"),
+  url("manrope-bold.woff") format("woff"),
+  url("manrope-bold.otf") format("truetype");
+  font-style: normal;
+  font-weight: 700; }
+@font-face {
+  font-family: "Manrope";
+  src: url("manrope-semibold.woff2") format("woff2"),
+  url("manrope-semibold.woff") format("woff"),
+  url("manrope-semibold.otf") format("truetype");
+  font-style: normal;
+  font-weight: 600; }
+@font-face {
+  font-family: "Manrope";
+  src: url("manrope-medium.woff2") format("woff2"),
+  url("manrope-medium.woff") format("woff"),
+  url("manrope-medium.otf") format("truetype");
+  font-style: normal;
+  font-weight: 500; }
+@font-face {
+  font-family: "Manrope";
+  src: url("manrope-regular.woff2") format("woff2"),
+  url("manrope-regular.woff") format("woff"),
+  url("manrope-regular.otf") format("truetype");
+  font-style: normal;
+  font-weight: 400; }
+@font-face {
+  font-family: "Manrope";
+  src: url("manrope-light.woff2") format("woff2"),
+  url("manrope-light.woff") format("woff"),
+  url("manrope-light.otf") format("truetype");
+  font-style: normal;
+  font-weight: 300; }
+@font-face {
+  font-family: "Manrope";
+  src: url("manrope-thin.woff2") format("woff2"),
+  url("manrope-thin.woff") format("woff"),
+  url("manrope-thin.otf") format("truetype");
+  font-style: normal;
+  font-weight: 200; }
+body, html {
+  font-family: "Manrope",sans-serif; }
+*,*:before,*:after {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  font-smoothing: antialiased; }

@@ -1,0 +1,190 @@
+/*
+    © 2019, Dark Orb.
+
+    The license version - 1.0
+
+    This license is hereby grants to any person who obtained a copy of this software the next rights to:
+    1. Use and do reverse-engineering of compiled version of this software at no cost, without any restrictions, in non-commercial and commercial purposes
+    2. Use source codes of this software at no cost but with the limitations - source codes available only for non-commercial, academic and / or scientific purposes
+    3. Copy and distribute without any fee
+    4. Create a copy of the original repository and / or create own derivative software for non-commercial,  academic and / or scientific purposes only
+
+    This license is require to:
+    1. Keep the full license text without any changes
+    2. The license text must be included once in a file called 'License' which placed in the root directory of the software and in all source files of the software
+
+    This license is deny to:
+    1. Change license of the derivative software
+    2. Use the copyright holder name and name of any contributor of this software for advertising derivative software without legally certified permission
+    3. Sell this software without an author legally certified permission 
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+*/
+
+/*
+Palette:
+
+#070707 #0749FF #02164C #CEDBFF #FFFFFF
+*/
+
+body {
+    width: calc(100vw - 14vw);
+    height: calc(100vh - 2.2vh);
+
+    margin: 0;
+    padding: 0;
+    padding-top: 2.2vh;
+    padding-left: 6vw;
+    padding-right: 6vw;
+
+    background-color: #070707;
+
+    display: flex;
+
+    flex-direction: column;
+}
+
+span, a,
+h1, h2, h3, h4, h5, h6,
+code {
+    margin: 0;
+    padding: 0;
+
+    color: #FFFFFF;
+
+    font-family: 'Manrope';
+
+    transition: color 0.15s ease-in-out;
+
+    cursor: default;
+
+    user-select: none;
+}
+
+span, a, code {
+    font-size: 12pt;
+    font-weight: 400;
+}
+
+code {
+    font-family: 'Source Code Pro', monospace;
+}
+
+header {
+    padding-top: 2vh;
+    padding-bottom: 2vh;
+
+    display: flex;
+
+    flex-direction: row;
+
+    align-items: center;
+
+    border-bottom: 1px solid #1A1A1A;
+
+    transition: border 0.15s ease-in-out;
+}
+
+@media screen and (max-width: 480px) {
+    header {
+        padding-top: 2vh;
+        padding-bottom: 2vh;
+
+        flex-direction: column;
+
+        align-items: center;
+    }
+}
+
+.ps-logotype {
+    margin-left: 1.3vw;
+
+    font-size: 32pt;
+    font-weight: 200;
+
+    letter-spacing: 3pt;
+}
+
+.ps-contentSection {
+    margin-top: 2vh;
+    margin-bottom: 4vh;
+    
+    display: flex;
+
+    flex-direction: column;
+}
+
+.ps-contentSection > h2 {
+    margin-bottom: 12px;
+}
+
+.ps-contentSection > div > span {
+    margin-bottom: 4px;
+
+    font-size: 11.2pt;
+}
+
+.ps-contentSection > div {
+    display: flex;
+    
+    flex-direction: column;
+}
+
+.ps-list {
+    padding-left: 26px;
+
+    color: #FFFFFF;
+
+    font-weight: 300;
+
+    list-style: square;
+}
+
+.ps-codePreview {
+    margin-top: 12px;
+    margin-bottom: 12px;
+    padding-left: 32px;
+
+    border-left: 1px solid #0749FF;
+    color: #AEAEAE;
+}
+
+.ps-codeDescription {
+    color: #EEEEEE;
+
+    font-size: 10pt !important;
+    font-weight: 300;
+    font-style: italic;
+}
+
+.ps-link {
+    cursor: pointer;
+}
+
+.ps-link:hover {
+    color: #0749FF;
+}
+
+.ps-link:focus {
+    color: #02164C;
+}
+
+footer {
+    padding-bottom: 2.2vh;
+
+    display: flex;
+
+    flex-direction: row;
+}
+
+.ps-copyright {
+    color: #AEAEAE;
+
+    font-size: 9.1pt;
+}

@@ -1,30 +1,39 @@
 /*
-� 2019, Dark Orb.
+© 2019, Serge Page.
 
-The license version - 1.0
+This license is hereby grants to any person who obtained a copy of this product or the product source files the next rights to:
 
-This license is hereby grants to any person who obtained a copy of this software the next rights to:
-1. Use and do reverse-engineering of compiled version of this software at no cost, without any restrictions, in non-commercial and commercial purposes
-2. Use source codes of this software at no cost but with the limitations - source codes available only for non-commercial, academic and / or scientific purposes
-3. Copy and distribute without any fee
-4. Create a copy of the original repository and / or create own derivative software for non-commercial,  academic and / or scientific purposes only
+- Use a compiled version of this product at no cost, without any restrictions, in non-commercial and commercial purposes
+- Do reverse-engineering of this product in non-commercial purposes only
+- Use source codes of this product at no cost but with the limitations - source codes available only for non-commercial, academic and / or scientific purposes
+- Copy and distribute without any fee
+- Copy of the original repository and / or create own derivative product for non-commercial,  academic and / or scientific purposes only
+- Link the product source code with an another product source code which licensed under any of Dark Orb licenses or one of these licenses:
+  - MIT License
+  - Microsoft Public License
+  - Beerware License
+  - Academic Free License
+  - WTFPL
+  - Unlicense
+  - Original BSD license
+  - Modified BSD License
+  - Simplified BSD License
+  - Zero Clause BSD
+- Link the product source code with an another product source code if between them no any patent collision
 
 This license is require to:
-1. Keep the full license text without any changes
-2. The license text must be included once in a file called 'License' which placed in the root directory of the software and in all source files of the software
+
+- Keep the full license text without any changes
+- The license text must be included once in a file called 'License' which placed in the root directory of the product and in all source files of the product
 
 This license is deny to:
-1. Change license of the derivative software
-2. Use the copyright holder name and name of any contributor of this software for advertising derivative software without legally certified permission
-3. Sell this software without an author legally certified permission
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+- Change license of the derivative product
+- Use the product’s author name and name of any contributor of this product for advertising derivative software without legally certified permission
+- Resell this product
+- Use the product or the product source code for any purpose which refers to any government of any country
+
+The product is an original source codes and original compiled files which made by the original author and provided only under the grants and restrictions of this license. All damages which can be happen after and while using the product will not be compensate.
 */
 
 #include "rackLib.hpp"
@@ -32,871 +41,901 @@ SOFTWARE.
 using namespace Rack;
 
 RPackage::RPackage() noexcept:
-  vBuffer( nullptr ) {}
+  VBuffer( U"" ) {}
 
 RPackage::RPackage( const RPackage &_Copy ) noexcept:
-  vBuffer( nullptr ), vFlatData( _Copy.fGetFlatData() ) {}
+  VBuffer( U"" ), VFlatData( _Copy.FGetFlatData() ) {}
 
-RPackage::RPackage( vector<RFile *> _Data ) noexcept:
-  vBuffer( nullptr ), vFlatData( _Data ) {}
+RPackage::RPackage( const vector<RFile *> &_Data ) noexcept:
+  VBuffer( U"" ), VFlatData( _Data ) {}
 
 RPackage::~RPackage() {
-  fClearBuffer();
-  vFlatData.clear();
+  FClearBuffer();
+  VFlatData.clear();
 }
 
-enErrorCode RPackage::fCreatePackage( const wstring _Path,
-                                      const vector <RFile *> _Data ) {
+ENErrorCodes RPackage::FCreatePackage( const u32string &_Path,
+                                       const vector <RFile *> &_Data ) {
   if( _Path.empty() )
-    return EC_INVALID_PATH;
+    return ENErrorCodes::EC_INVALID_PATH;
 
   if( _Data.empty() )
-    return EC_INVALID_ARGUMENT;
+    return ENErrorCodes::EC_INVALID_ARGUMENT;
 
-  wstring vSerializedData;
+  u32string VSerializedData;
 
-  for( const RFile *vFile : _Data )
-    vSerializedData += fSerializeFile( vFile );
+  for( const RFile *VFile : _Data )
+    VSerializedData += FSerializeFile( VFile );
 
-  wofstream vFile( _Path + L".rpack", ios::binary | ios::trunc );
+  basic_ofstream<char32_t> VFile( _Path + U".rpack", ios::binary | ios::trunc );
 
-  size_t vSourceSize = vSerializedData.length() + 1;
+  const uint32_t VSourceSize = static_cast< uint32_t >( VSerializedData.length() + 1 );
 
-  wchar_t *vFileBuffer = new wchar_t [ vSourceSize ];
+  char32_t *VFileBuffer = new char32_t [ VSourceSize ];
+  VFileBuffer [ VSourceSize ] = U'\0';
 
-  wcscpy_s( vFileBuffer, vSourceSize, vSerializedData.c_str() );
-  vSerializedData.clear();
-
-  vFile.write( vFileBuffer, wcslen( vFileBuffer ) );
-
-  vFile.close();
-
-  delete[] vFileBuffer;
-
-  return EC_OK;
-}
-
-enErrorCode RPackage::fLoadPackage( const wstring _Path ) {
-  if( _Path.empty() ||
-      !exists( _Path ) || !directory_entry( _Path ).is_regular_file() )
-    return EC_INVALID_PATH;
-
-  if( fIsRackFile( _Path ) != DefaultExtension )
-    return EC_NOT_PACKAGE;
-
-  wifstream vFile( _Path, ios::binary );
-
-  vFile.seekg( 0, SEEK_END );
-  streampos vFileLength = vFile.tellg();
-  vFile.seekg( 0 );
-
-  if( vFileLength == 0 ) {
-    vFile.close();
-
-    return EC_EMPTY_FILE;
+  for( uint32_t c = 0; c < VSourceSize - 1; c++ ) {
+    VFileBuffer [ c ] = VSerializedData [ c ];
   }
 
-  vFlatData.clear();
+  if( char_traits<char32_t>::length( VFileBuffer ) == 0 ) {
+    delete[] VFileBuffer;
+    VFileBuffer = nullptr;
 
-  wchar_t vControlCharacters [ 4 ];
-  while( vFile.get( vControlCharacters [ 0 ] ) ) {
-    vFile.get( vControlCharacters [ 1 ] );
-    vFile.get( vControlCharacters [ 2 ] );
-    vFile.get( vControlCharacters [ 3 ] );
+    return ENErrorCodes::EC_INVALID_READ;
+  }
 
-    if( vControlCharacters [ 0 ] == OPC_START_PATH
-        && vControlCharacters [ 1 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 2 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 3 ] == OPC_PATH_DIVIDER ) {
-      RFile *vGetFile = fParseFile( vFile );
+  VSerializedData.clear();
 
-      if( vGetFile != nullptr )
-        vFlatData.push_back( vGetFile );
+  VFile.write( VFileBuffer, VSourceSize );
+
+  VFile.close();
+
+  delete[] VFileBuffer;
+  VFileBuffer = nullptr;
+
+  return ENErrorCodes::EC_OK;
+}
+
+ENErrorCodes RPackage::FLoadPackage( const u32string &_Path ) {
+  if( _Path.empty() ||
+      !exists( _Path ) || !directory_entry( _Path ).is_regular_file() )
+    return ENErrorCodes::EC_INVALID_PATH;
+
+  if( FIsRackFile( _Path ) != ENExtensions::DefaultExtension )
+    return ENErrorCodes::EC_NOT_PACKAGE;
+
+  basic_ifstream<char32_t> VFile( _Path, ios::binary );
+
+  VFile.seekg( 0, SEEK_END );
+  const streampos VFileLength = VFile.tellg();
+  VFile.seekg( 0 );
+
+  if( VFileLength == 0 ) {
+    VFile.close();
+
+    return ENErrorCodes::EC_EMPTY_FILE;
+  }
+
+  VFlatData.clear();
+
+  char32_t VControlCharacters [ 4 ];
+  while( VFile.get( VControlCharacters [ 0 ] ) ) {
+    VFile.get( VControlCharacters [ 1 ] );
+    VFile.get( VControlCharacters [ 2 ] );
+    VFile.get( VControlCharacters [ 3 ] );
+
+    if( VControlCharacters [ 0 ] == static_cast< char32_t >( ENOpcodes::OPC_START_PATH )
+        && VControlCharacters [ 1 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 2 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 3 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER ) ) {
+      RFile *VGetFile = FParseFile( VFile );
+
+      if( VGetFile != nullptr )
+        VFlatData.push_back( VGetFile );
       else {
-        vFile.close();
+        VFile.close();
 
-        return EC_INVALID_PARSE;
+        return ENErrorCodes::EC_INVALID_PARSE;
       }
     } else
-      vFile.seekg( -3, ios::cur );
+      VFile.seekg( -3, ios::cur );
   }
 
-  vFile.close();
+  VFile.close();
 
-  if( vFlatData.empty() )
-    return EC_INVALID_PACKAGE;
+  if( VFlatData.empty() )
+    return ENErrorCodes::EC_INVALID_PACKAGE;
 
-  return EC_OK;
+  return ENErrorCodes::EC_OK;
 }
 
-enErrorCode RPackage::fLoadPackage( const wstring _Path,
-                                    vector<RFile *> &_Data ) {
+ENErrorCodes RPackage::FLoadPackage( const u32string &_Path,
+                                     vector<RFile *> &_Data ) {
   if( _Path.empty() ||
       !exists( _Path ) || !directory_entry( _Path ).is_regular_file() )
-    return EC_INVALID_PATH;
+    return ENErrorCodes::EC_INVALID_PATH;
 
-  if( fIsRackFile( _Path ) != DefaultExtension )
-    return EC_NOT_PACKAGE;
+  if( FIsRackFile( _Path ) != ENExtensions::DefaultExtension )
+    return ENErrorCodes::EC_NOT_PACKAGE;
 
-  wifstream vFile( _Path, ios::binary );
+  basic_ifstream<char32_t> VFile( _Path, ios::binary );
 
-  vFile.seekg( 0, SEEK_END );
-  streampos vFileLength = vFile.tellg();
-  vFile.seekg( 0 );
+  VFile.seekg( 0, SEEK_END );
+  const streampos VFileLength = VFile.tellg();
+  VFile.seekg( 0 );
 
-  if( vFileLength == 0 ) {
-    vFile.close();
+  if( VFileLength == 0 ) {
+    VFile.close();
 
-    return EC_EMPTY_FILE;
+    return ENErrorCodes::EC_EMPTY_FILE;
   }
 
   _Data.clear();
 
-  wchar_t vControlCharacters [ 4 ];
-  while( vFile.get( vControlCharacters [ 0 ] ) ) {
-    vFile.get( vControlCharacters [ 1 ] );
-    vFile.get( vControlCharacters [ 2 ] );
-    vFile.get( vControlCharacters [ 3 ] );
+  char32_t VControlCharacters [ 4 ];
+  while( VFile.get( VControlCharacters [ 0 ] ) ) {
+    VFile.get( VControlCharacters [ 1 ] );
+    VFile.get( VControlCharacters [ 2 ] );
+    VFile.get( VControlCharacters [ 3 ] );
 
-    if( vControlCharacters [ 0 ] == OPC_START_PATH
-        && vControlCharacters [ 1 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 2 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 3 ] == OPC_PATH_DIVIDER ) {
-      RFile *vGetFile = fParseFile( vFile );
+    if( VControlCharacters [ 0 ] == static_cast< char32_t >( ENOpcodes::OPC_START_PATH )
+        && VControlCharacters [ 1 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 2 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 3 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER ) ) {
+      RFile *VGetFile = FParseFile( VFile );
 
-      if( vGetFile != nullptr )
-        _Data.push_back( vGetFile );
+      if( VGetFile != nullptr )
+        _Data.push_back( VGetFile );
       else {
-        vFile.close();
+        VFile.close();
 
-        return EC_INVALID_PARSE;
+        return ENErrorCodes::EC_INVALID_PARSE;
       }
     } else
-      vFile.seekg( -3, ios::cur );
+      VFile.seekg( -3, ios::cur );
   }
 
-  vFile.close();
+  VFile.close();
 
   if( _Data.empty() )
-    return EC_INVALID_PACKAGE;
+    return ENErrorCodes::EC_INVALID_PACKAGE;
 
-  return EC_OK;
+  return ENErrorCodes::EC_OK;
 }
 
-enErrorCode RPackage::fFullLoadPackage( const wstring _Path ) {
+ENErrorCodes RPackage::FFullLoadPackage( const u32string &_Path ) {
   if( _Path.empty() ||
       !exists( _Path ) || !directory_entry( _Path ).is_regular_file() )
-    return EC_INVALID_PATH;
+    return ENErrorCodes::EC_INVALID_PATH;
 
-  if( fIsRackFile( _Path ) != DefaultExtension )
-    return EC_NOT_PACKAGE;
+  if( FIsRackFile( _Path ) != ENExtensions::DefaultExtension )
+    return ENErrorCodes::EC_NOT_PACKAGE;
 
-  fClearBuffer();
+  FClearBuffer();
 
-  wifstream vFile( _Path, ios::binary );
+  basic_ifstream<char32_t> VFile( _Path, ios::binary );
 
-  vFile.seekg( 0, SEEK_END );
-  streampos vFileLength = vFile.tellg();
-  vFile.seekg( 0 );
+  VFile.seekg( 0, SEEK_END );
+  const streampos VFileLength = VFile.tellg();
+  VFile.seekg( 0 );
 
-  if( vFileLength == 0 ) {
-    vFile.close();
+  if( VFileLength == 0 ) {
+    VFile.close();
 
-    return EC_EMPTY_FILE;
+    return ENErrorCodes::EC_EMPTY_FILE;
   }
 
-  vBuffer = new wchar_t [ static_cast< uint32_t >( vFileLength ) + 1 ];
+  char32_t *VTemporaryBuffer = new char32_t [ static_cast< uint32_t >( VFileLength ) + 1 ];
+  VTemporaryBuffer [ static_cast< uint32_t >( VFileLength ) ] = U'\0';
 
-  vFile.read( vBuffer, vFileLength );
+  VFile.read( VTemporaryBuffer, VFileLength );
 
-  vFile.close();
+  VFile.close();
 
-  if( wcslen( vBuffer ) == 0 ) {
-    fClearBuffer();
+  if( char_traits<char32_t>::length( VTemporaryBuffer ) == 0 ) {
+    delete[] VTemporaryBuffer;
+    VTemporaryBuffer = nullptr;
 
-    return EC_INVALID_READ;
+    FClearBuffer();
+
+    return ENErrorCodes::EC_INVALID_READ;
   }
 
-  vFlatData.clear();
+  VBuffer = move( VTemporaryBuffer );
+
+  delete[] VTemporaryBuffer;
+  VTemporaryBuffer = nullptr;
+
+  VFlatData.clear();
 
   try {
-    for( size_t c = 0; c < static_cast< uint32_t >( vFileLength ) + 1; c++ ) {
-      if( vBuffer [ c ] == OPC_START_PATH
-          && vBuffer [ c + 1 ] == OPC_PATH_DIVIDER
-          && vBuffer [ c + 2 ] == OPC_PATH_DIVIDER
-          && vBuffer [ c + 3 ] == OPC_PATH_DIVIDER ) {
-        RFile *vGetFile = fParseFile( c );
+    for( uint32_t c = 0; c < static_cast< uint32_t >( VFileLength ) + 1; c++ ) {
+      if( VBuffer [ c ] == static_cast< char32_t >( ENOpcodes::OPC_START_PATH )
+          && VBuffer [ c + 1 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+          && VBuffer [ c + 2 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+          && VBuffer [ c + 3 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER ) ) {
+        RFile *VGetFile = FParseFile( c );
 
-        if( vGetFile != nullptr )
-          vFlatData.push_back( vGetFile );
+        if( VGetFile != nullptr )
+          VFlatData.push_back( VGetFile );
         else
-          return EC_INVALID_PARSE;
+          return ENErrorCodes::EC_INVALID_PARSE;
       }
     }
   } catch( ... ) {
-    return EC_INVALID_PARSE;
+    return ENErrorCodes::EC_INVALID_PARSE;
   }
 
-  fClearBuffer();
+  FClearBuffer();
 
-  return EC_OK;
+  return ENErrorCodes::EC_OK;
 }
 
-enErrorCode RPackage::fFullLoadPackage( const wstring _Path,
-                                        vector<RFile *> &_Data ) {
+ENErrorCodes RPackage::FFullLoadPackage( const u32string &_Path,
+                                         vector<RFile *> &_Data ) {
   if( _Path.empty() ||
       !exists( _Path ) || !directory_entry( _Path ).is_regular_file() )
-    return EC_INVALID_PATH;
+    return ENErrorCodes::EC_INVALID_PATH;
 
-  if( fIsRackFile( _Path ) != DefaultExtension )
-    return EC_NOT_PACKAGE;
+  if( FIsRackFile( _Path ) != ENExtensions::DefaultExtension )
+    return ENErrorCodes::EC_NOT_PACKAGE;
 
-  fClearBuffer();
+  FClearBuffer();
 
-  wifstream vFile( _Path, ios::binary );
+  basic_ifstream<char32_t> VFile( _Path, ios::binary );
 
-  vFile.seekg( 0, SEEK_END );
-  streampos vFileLength = vFile.tellg();
-  vFile.seekg( 0 );
+  VFile.seekg( 0, SEEK_END );
+  streampos VFileLength = VFile.tellg();
+  VFile.seekg( 0 );
 
-  if( vFileLength == 0 ) {
-    vFile.close();
+  if( VFileLength == 0 ) {
+    VFile.close();
 
-    return EC_EMPTY_FILE;
+    return ENErrorCodes::EC_EMPTY_FILE;
   }
 
-  vBuffer = new wchar_t [ static_cast< uint32_t >( vFileLength ) + 1 ];
+  char32_t *VTemporaryBuffer = new char32_t [ static_cast< uint32_t >( VFileLength ) + 1 ];
+  VTemporaryBuffer [ static_cast< uint32_t >( VFileLength ) ] = U'\0';
 
-  vFile.read( vBuffer, vFileLength );
+  VFile.read( VTemporaryBuffer, VFileLength );
 
-  vFile.close();
+  VFile.close();
 
-  if( wcslen( vBuffer ) == 0 ) {
-    fClearBuffer();
+  if( char_traits<char32_t>::length( VTemporaryBuffer ) == 0 ) {
+    delete[] VTemporaryBuffer;
+    VTemporaryBuffer = nullptr;
 
-    return EC_INVALID_READ;
+    FClearBuffer();
+
+    return ENErrorCodes::EC_INVALID_READ;
   }
+
+  VBuffer = move( VTemporaryBuffer );
+
+  delete[] VTemporaryBuffer;
+  VTemporaryBuffer = nullptr;
 
   _Data.clear();
 
   try {
-    for( size_t c = 0; c < static_cast< uint32_t >( vFileLength ) + 1; c++ ) {
-      if( vBuffer [ c ] == OPC_START_PATH
-          && vBuffer [ c + 1 ] == OPC_PATH_DIVIDER
-          && vBuffer [ c + 2 ] == OPC_PATH_DIVIDER
-          && vBuffer [ c + 3 ] == OPC_PATH_DIVIDER ) {
-        RFile *vGetFile = fParseFile( c );
+    for( uint32_t c = 0; c < static_cast< uint32_t >( VFileLength ) + 1; c++ ) {
+      if( VBuffer [ c ] == static_cast< char32_t >( ENOpcodes::OPC_START_PATH )
+          && VBuffer [ c + 1 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+          && VBuffer [ c + 2 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+          && VBuffer [ c + 3 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER ) ) {
+        RFile *VGetFile = FParseFile( c );
 
-        if( vGetFile != nullptr )
-          _Data.push_back( vGetFile );
+        if( VGetFile != nullptr )
+          _Data.push_back( VGetFile );
         else
-          return EC_INVALID_PARSE;
+          return ENErrorCodes::EC_INVALID_PARSE;
       }
     }
   } catch( ... ) {
-    return EC_INVALID_PARSE;
+    return ENErrorCodes::EC_INVALID_PARSE;
   }
 
-  fClearBuffer();
+  FClearBuffer();
 
-  return EC_OK;
+  return ENErrorCodes::EC_OK;
 }
 
-enErrorCode RPackage::fSavePackage( const wstring _Path ) {
+ENErrorCodes RPackage::FSavePackage( const u32string &_Path ) {
   if( _Path.empty() )
-    return EC_INVALID_PATH;
+    return ENErrorCodes::EC_INVALID_PATH;
 
-  if( vFlatData.empty() )
-    return EC_EMPTY_DATA;
+  if( VFlatData.empty() )
+    return ENErrorCodes::EC_EMPTY_DATA;
 
-  wstring vSerializedData;
+  u32string VSerializedData;
 
-  for( const RFile *vFile : vFlatData )
-    vSerializedData += fSerializeFile( vFile );
+  for( const RFile *VFile : VFlatData )
+    VSerializedData += FSerializeFile( VFile );
 
-  wofstream vFile( _Path + L".rpack", ios::binary | ios::trunc );
+  basic_ofstream<char32_t> VFile( _Path + U".rpack", ios::binary | ios::trunc );
 
-  vFile.write( vSerializedData.c_str(), vSerializedData.length() );
+  VFile.write( VSerializedData.c_str(), VSerializedData.length() );
 
-  vFile.close();
+  VFile.close();
 
-  vSerializedData.clear();
+  VSerializedData.clear();
 
-  return EC_OK;
+  return ENErrorCodes::EC_OK;
 }
 
-enErrorCode RPackage::fSavePackage( const wstring _Path,
-                                    const vector <RFile *> _Data ) {
+ENErrorCodes RPackage::FSavePackage( const u32string &_Path,
+                                     const vector <RFile *> &_Data ) {
   if( _Path.empty() )
-    return EC_INVALID_PATH;
+    return ENErrorCodes::EC_INVALID_PATH;
 
   if( _Data.empty() )
-    return EC_EMPTY_DATA;
+    return ENErrorCodes::EC_EMPTY_DATA;
 
-  wstring vSerializedData;
+  u32string VSerializedData;
 
-  for( const RFile *vFile : _Data )
-    vSerializedData += fSerializeFile( vFile );
+  for( const RFile *VFile : _Data )
+    VSerializedData += FSerializeFile( VFile );
 
-  wofstream vFile( _Path + L".rpack", ios::binary | ios::trunc );
+  basic_ofstream<char32_t> VFile( _Path + U".rpack", ios::binary | ios::trunc );
 
-  vFile.write( vSerializedData.c_str(), vSerializedData.length() );
+  VFile.write( VSerializedData.c_str(), VSerializedData.length() );
 
-  vFile.close();
+  VFile.close();
 
-  vSerializedData.clear();
+  VSerializedData.clear();
 
-  return EC_OK;
+  return ENErrorCodes::EC_OK;
 }
 
-enErrorCode RPackage::fMakeFlatDirectory( vector<RFile *> &_Destination,
-                                          const RDirectory *_Directory ) const {
+ENErrorCodes RPackage::FMakeFlatDirectory( vector<RFile *> &_Destination,
+                                           const RDirectory *_Directory ) const {
   if( _Directory == nullptr )
-    return EC_INVALID_ARGUMENT;
+    return ENErrorCodes::EC_INVALID_ARGUMENT;
 
   _Destination.clear();
 
-  for( RFile *vFile : fGetDirectoryFiles( _Directory ) )
-    _Destination.push_back( vFile );
+  for( RFile *VFile : FGetDirectoryFiles( _Directory ) )
+    _Destination.push_back( VFile );
 
-  return EC_OK;
+  return ENErrorCodes::EC_OK;
 }
 
-enErrorCode RPackage::fMakePackage( vector<RFile *> &_Destination,
-                                    const vector<RDirectory *> _Directories ) const {
+ENErrorCodes RPackage::FMakePackage( vector<RFile *> &_Destination,
+                                     const vector<RDirectory *> &_Directories ) const {
   if( _Directories.empty() )
-    return EC_INVALID_ARGUMENT;
+    return ENErrorCodes::EC_INVALID_ARGUMENT;
 
   _Destination.clear();
 
-  for( const RDirectory *vDirectory : _Directories ) {
-    for( RFile *vFile : fGetDirectoryFiles( vDirectory ) )
-      _Destination.push_back( vFile );
+  for( const RDirectory *VDirectory : _Directories ) {
+    for( RFile *VFile : FGetDirectoryFiles( VDirectory ) )
+      _Destination.push_back( VFile );
   }
 
-  return EC_OK;
+  return ENErrorCodes::EC_OK;
 }
 
-enErrorCode RPackage::fReadStructure( const wstring _Path,
-                                      RDirectory *&_Destination ) {
+ENErrorCodes RPackage::FReadStructure( const u32string &_Path,
+                                       RDirectory *_Destination ) {
   if( _Path.empty() ||
       !exists( _Path ) || !directory_entry( _Path ).is_regular_file() )
-    return EC_INVALID_PATH;
+    return ENErrorCodes::EC_INVALID_PATH;
 
-  if( fIsRackFile( _Path ) != DefaultExtension )
-    return EC_NOT_PACKAGE;
+  if( FIsRackFile( _Path ) != ENExtensions::DefaultExtension )
+    return ENErrorCodes::EC_NOT_PACKAGE;
 
-  wifstream vFile( _Path, ios::binary );
+  basic_ifstream<char32_t> VFile( _Path, ios::binary );
 
-  vFile.seekg( 0, SEEK_END );
-  streampos vFileLength = vFile.tellg();
-  vFile.seekg( 0 );
+  VFile.seekg( 0, SEEK_END );
+  const streampos VFileLength = VFile.tellg();
+  VFile.seekg( 0 );
 
-  if( vFileLength == 0 ) {
-    vFile.close();
+  if( VFileLength == 0 ) {
+    VFile.close();
 
-    return EC_EMPTY_FILE;
+    return ENErrorCodes::EC_EMPTY_FILE;
   }
 
-  vector<wstring> vPaths;
+  vector<u32string> VPaths;
 
-  wchar_t vControlCharacters [ 4 ];
-  while( vFile.get( vControlCharacters [ 0 ] ) ) {
-    vFile.get( vControlCharacters [ 1 ] );
-    vFile.get( vControlCharacters [ 2 ] );
-    vFile.get( vControlCharacters [ 3 ] );
+  char32_t VControlCharacters [ 4 ];
+  while( VFile.get( VControlCharacters [ 0 ] ) ) {
+    VFile.get( VControlCharacters [ 1 ] );
+    VFile.get( VControlCharacters [ 2 ] );
+    VFile.get( VControlCharacters [ 3 ] );
 
-    if( vControlCharacters [ 0 ] == OPC_START_PATH
-        && vControlCharacters [ 1 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 2 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 3 ] == OPC_PATH_DIVIDER ) {
-      wstring vGetFilePath = fParseFilePath( vFile );
+    if( VControlCharacters [ 0 ] == static_cast< char32_t >( ENOpcodes::OPC_START_PATH )
+        && VControlCharacters [ 1 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 2 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 3 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER ) ) {
+      u32string VGetFilePath = FParseFilePath( VFile );
 
-      if( !vGetFilePath.empty() )
-        vPaths.push_back( vGetFilePath );
+      if( !VGetFilePath.empty() )
+        VPaths.push_back( VGetFilePath );
       else {
-        vFile.close();
+        VFile.close();
 
-        return EC_INVALID_PARSE;
+        return ENErrorCodes::EC_INVALID_PARSE;
       }
     } else
-      vFile.seekg( -3, ios::cur );
+      VFile.seekg( -3, ios::cur );
   }
 
-  vFile.close();
+  VFile.close();
 
-  for( const wstring vPath : vPaths )
-    fCreatePath( _Destination, fSplitPath( vPath ), 0 );
+  for( const u32string VPath : VPaths )
+    FCreatePath( _Destination, FSplitPath( VPath ), 0 );
 
-  return EC_OK;
+  return ENErrorCodes::EC_OK;
 }
 
-enErrorCode RPackage::fExtractFile( const wstring _Path,
-                                    const wstring _Name,
-                                    RFile *&_Destination ) {
+ENErrorCodes RPackage::FExtractFile( const u32string &_Path,
+                                     const u32string &_Name,
+                                     RFile *_Destination ) {
   if( _Path.empty() ||
       !exists( _Path ) || !directory_entry( _Path ).is_regular_file() )
-    return EC_INVALID_PATH;
+    return ENErrorCodes::EC_INVALID_PATH;
 
-  if( fIsRackFile( _Path ) != DefaultExtension )
-    return EC_NOT_PACKAGE;
+  if( FIsRackFile( _Path ) != ENExtensions::DefaultExtension )
+    return ENErrorCodes::EC_NOT_PACKAGE;
 
-  wifstream vFile( _Path, ios::binary );
+  basic_ifstream<char32_t> VFile( _Path, ios::binary );
 
-  vFile.seekg( 0, SEEK_END );
-  streampos vFileLength = vFile.tellg();
-  vFile.seekg( 0 );
+  VFile.seekg( 0, SEEK_END );
+  const streampos VFileLength = VFile.tellg();
+  VFile.seekg( 0 );
 
-  if( vFileLength == 0 ) {
-    vFile.close();
+  if( VFileLength == 0 ) {
+    VFile.close();
 
-    return EC_EMPTY_FILE;
+    return ENErrorCodes::EC_EMPTY_FILE;
   }
 
-  wchar_t vControlCharacters [ 4 ];
-  while( vFile.get( vControlCharacters [ 0 ] ) ) {
-    vFile.get( vControlCharacters [ 1 ] );
-    vFile.get( vControlCharacters [ 2 ] );
-    vFile.get( vControlCharacters [ 3 ] );
+  char32_t VControlCharacters [ 4 ];
+  while( VFile.get( VControlCharacters [ 0 ] ) ) {
+    VFile.get( VControlCharacters [ 1 ] );
+    VFile.get( VControlCharacters [ 2 ] );
+    VFile.get( VControlCharacters [ 3 ] );
 
-    if( vControlCharacters [ 0 ] == OPC_START_PATH
-        && vControlCharacters [ 1 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 2 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 3 ] == OPC_PATH_DIVIDER ) {
-      RFile *vGetFile = fParseFile( vFile );
+    if( VControlCharacters [ 0 ] == static_cast< char32_t >( ENOpcodes::OPC_START_PATH )
+        && VControlCharacters [ 1 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 2 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 3 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER ) ) {
+      RFile *VGetFile = FParseFile( VFile );
 
-      if( vGetFile == nullptr ) {
-        vFile.close();
+      if( VGetFile == nullptr ) {
+        VFile.close();
 
-        return EC_INVALID_PARSE;
+        return ENErrorCodes::EC_INVALID_PARSE;
       }
 
-      if( vGetFile->fGetName() == _Name ) {
-        _Destination = vGetFile;
+      if( VGetFile->FGetName() == _Name ) {
+        _Destination = VGetFile;
 
-        vFile.close();
+        VFile.close();
 
-        return EC_OK;
+        return ENErrorCodes::EC_OK;
       }
     } else
-      vFile.seekg( -3, ios::cur );
+      VFile.seekg( -3, ios::cur );
   }
 
-  vFile.close();
+  VFile.close();
 
-  return EC_OK;
+  return ENErrorCodes::EC_OK;
 }
 
-enErrorCode RPackage::fExtractDirectory( const wstring _Path,
-                                         const wstring _Name,
-                                         RDirectory *&_Destination ) {
+ENErrorCodes RPackage::FExtractDirectory( const u32string &_Path,
+                                          const u32string &_Name,
+                                          RDirectory *_Destination ) {
   if( _Path.empty() ||
       !exists( _Path ) || !directory_entry( _Path ).is_regular_file() )
-    return EC_INVALID_PATH;
+    return ENErrorCodes::EC_INVALID_PATH;
 
-  if( fIsRackFile( _Path ) != DefaultExtension )
-    return EC_NOT_PACKAGE;
+  if( FIsRackFile( _Path ) != ENExtensions::DefaultExtension )
+    return ENErrorCodes::EC_NOT_PACKAGE;
 
-  wifstream vFile( _Path, ios::binary );
+  basic_ifstream<char32_t> VFile( _Path, ios::binary );
 
-  vFile.seekg( 0, SEEK_END );
-  streampos vFileLength = vFile.tellg();
-  vFile.seekg( 0 );
+  VFile.seekg( 0, SEEK_END );
+  const streampos VFileLength = VFile.tellg();
+  VFile.seekg( 0 );
 
-  if( vFileLength == 0 ) {
-    vFile.close();
+  if( VFileLength == 0 ) {
+    VFile.close();
 
-    return EC_EMPTY_FILE;
+    return ENErrorCodes::EC_EMPTY_FILE;
   }
 
-  wchar_t vControlCharacters [ 4 ];
-  while( vFile.get( vControlCharacters [ 0 ] ) ) {
-    vFile.get( vControlCharacters [ 1 ] );
-    vFile.get( vControlCharacters [ 2 ] );
-    vFile.get( vControlCharacters [ 3 ] );
+  char32_t VControlCharacters [ 4 ];
+  while( VFile.get( VControlCharacters [ 0 ] ) ) {
+    VFile.get( VControlCharacters [ 1 ] );
+    VFile.get( VControlCharacters [ 2 ] );
+    VFile.get( VControlCharacters [ 3 ] );
 
-    if( vControlCharacters [ 0 ] == OPC_START_PATH
-        && vControlCharacters [ 1 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 2 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 3 ] == OPC_PATH_DIVIDER ) {
-      RFile *vGetFile = fParseFile( vFile );
+    if( VControlCharacters [ 0 ] == static_cast< char32_t >( ENOpcodes::OPC_START_PATH )
+        && VControlCharacters [ 1 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 2 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 3 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER ) ) {
+      RFile *VGetFile = FParseFile( VFile );
 
-      if( vGetFile == nullptr ) {
-        vFile.close();
+      if( VGetFile == nullptr ) {
+        VFile.close();
 
-        return EC_INVALID_PARSE;
+        return ENErrorCodes::EC_INVALID_PARSE;
       }
 
-      if( fIsPathContainsDirectory( vGetFile->fGetPath(), _Name ) ) {
-        fCreatePath( _Destination,
-                     fSplitPath( fTruncatePath( vGetFile->fGetPath(), _Name ) ), 0 );
+      if( FIsPathContainsDirectory( VGetFile->FGetPath(), _Name ) ) {
+        FCreatePath( _Destination,
+                     FSplitPath( FTruncatePath( VGetFile->FGetPath(), _Name ) ), 0 );
 
-        vGetFile->fSetPath( vGetFile->fGetName() );
+        VGetFile->FSetPath( VGetFile->FGetName() );
 
-        if( fInsertFileToDirectory( _Destination, _Name, vGetFile ) != EC_OK )
-          return EC_INVALID_INSERT;
+        if( FInsertFileToDirectory( _Destination, _Name, VGetFile ) != ENErrorCodes::EC_OK )
+          return ENErrorCodes::EC_INVALID_INSERT;
       }
     } else
-      vFile.seekg( -3, ios::cur );
+      VFile.seekg( -3, ios::cur );
   }
 
-  vFile.close();
+  VFile.close();
 
-  return EC_OK;
+  return ENErrorCodes::EC_OK;
 }
 
-RFile *RPackage::fParseFile( wifstream &_FileStream ) const {
-  wstring vPath, vData;
+RFile *RPackage::FParseFile( basic_ifstream<char32_t> &_FileStream ) const {
+  u32string VPath, VData;
 
-  wchar_t vControlCharacters [ 4 ];
-  while( _FileStream.get( vControlCharacters [ 0 ] ) ) {
-    _FileStream.get( vControlCharacters [ 1 ] );
-    _FileStream.get( vControlCharacters [ 2 ] );
-    _FileStream.get( vControlCharacters [ 3 ] );
+  char32_t VControlCharacters [ 4 ];
+  while( _FileStream.get( VControlCharacters [ 0 ] ) ) {
+    _FileStream.get( VControlCharacters [ 1 ] );
+    _FileStream.get( VControlCharacters [ 2 ] );
+    _FileStream.get( VControlCharacters [ 3 ] );
 
-    if( vControlCharacters [ 0 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 1 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 2 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 3 ] == OPC_END_PATH )
+    if( VControlCharacters [ 0 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 1 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 2 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 3 ] == static_cast< char32_t >( ENOpcodes::OPC_END_PATH ) )
       break;
     else {
       _FileStream.seekg( -3, ios::cur );
 
-      vPath += vControlCharacters [ 0 ];
+      VPath += VControlCharacters [ 0 ];
     }
   }
 
-  if( vPath.empty() )
+  if( VPath.empty() )
     return nullptr;
 
-  _FileStream.get( vControlCharacters [ 0 ] );
-  _FileStream.get( vControlCharacters [ 1 ] );
-  _FileStream.get( vControlCharacters [ 2 ] );
-  _FileStream.get( vControlCharacters [ 3 ] );
+  _FileStream.get( VControlCharacters [ 0 ] );
+  _FileStream.get( VControlCharacters [ 1 ] );
+  _FileStream.get( VControlCharacters [ 2 ] );
+  _FileStream.get( VControlCharacters [ 3 ] );
 
-  if( vControlCharacters [ 0 ] != OPC_START_DATA
-      && vControlCharacters [ 1 ] != OPC_DATA_DIVIDER
-      && vControlCharacters [ 2 ] != OPC_DATA_DIVIDER
-      && vControlCharacters [ 3 ] != OPC_DATA_DIVIDER ) {
-    vPath.clear();
+  if( VControlCharacters [ 0 ] != static_cast< char32_t >( ENOpcodes::OPC_START_DATA )
+      && VControlCharacters [ 1 ] != static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+      && VControlCharacters [ 2 ] != static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+      && VControlCharacters [ 3 ] != static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER ) ) {
+    VPath.clear();
 
     return nullptr;
   }
 
-  while( _FileStream.get( vControlCharacters [ 0 ] ) ) {
-    _FileStream.get( vControlCharacters [ 1 ] );
-    _FileStream.get( vControlCharacters [ 2 ] );
-    _FileStream.get( vControlCharacters [ 3 ] );
+  while( _FileStream.get( VControlCharacters [ 0 ] ) ) {
+    _FileStream.get( VControlCharacters [ 1 ] );
+    _FileStream.get( VControlCharacters [ 2 ] );
+    _FileStream.get( VControlCharacters [ 3 ] );
 
-    if( vControlCharacters [ 0 ] == OPC_DATA_DIVIDER
-        && vControlCharacters [ 1 ] == OPC_DATA_DIVIDER
-        && vControlCharacters [ 2 ] == OPC_DATA_DIVIDER
-        && vControlCharacters [ 3 ] == OPC_END_DATA )
+    if( VControlCharacters [ 0 ] == static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+        && VControlCharacters [ 1 ] == static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+        && VControlCharacters [ 2 ] == static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+        && VControlCharacters [ 3 ] == static_cast< char32_t >( ENOpcodes::OPC_END_DATA ) )
       break;
     else {
       _FileStream.seekg( -3, ios::cur );
 
-      vData += vControlCharacters [ 0 ];
+      VData += VControlCharacters [ 0 ];
     }
   }
 
-  if( vData.length() == 0 ) {
-    vPath.clear();
+  if( VData.length() == 0 ) {
+    VPath.clear();
 
     return nullptr;
   }
 
-  return new RFile( vPath, vData.c_str() );
+  return new RFile( VPath, VData.c_str() );
 }
 
-RFile *RPackage::fParseFile( size_t &_Index ) {
-  wstring vPath, vData;
+RFile *RPackage::FParseFile( uint32_t &_Index ) {
+  u32string VPath, VData;
 
-  size_t c = _Index + 4;
+  uint32_t c = _Index + 4;
 
-  for( ; c < wcslen( vBuffer ); c++ ) {
-    if( vBuffer [ c ] == OPC_PATH_DIVIDER
-        && vBuffer [ c + 1 ] == OPC_PATH_DIVIDER
-        && vBuffer [ c + 2 ] == OPC_PATH_DIVIDER
-        && vBuffer [ c + 3 ] == OPC_END_PATH ) {
+  for( ; c < VBuffer.length(); c++ ) {
+    if( VBuffer [ c ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VBuffer [ c + 1 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VBuffer [ c + 2 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VBuffer [ c + 3 ] == static_cast< char32_t >( ENOpcodes::OPC_END_PATH ) ) {
       c += 4;
       break;
     } else
-      vPath += vBuffer [ c ];
+      VPath += VBuffer [ c ];
   }
 
-  if( vPath.empty() )
+  if( VPath.empty() )
     return nullptr;
 
-  if( vBuffer [ c ] != OPC_START_DATA
-      && vBuffer [ c + 1 ] != OPC_DATA_DIVIDER
-      && vBuffer [ c + 2 ] != OPC_DATA_DIVIDER
-      && vBuffer [ c + 3 ] != OPC_DATA_DIVIDER ) {
-    vPath.clear();
+  if( VBuffer [ c ] != static_cast< char32_t >( ENOpcodes::OPC_START_DATA )
+      && VBuffer [ c + 1 ] != static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+      && VBuffer [ c + 2 ] != static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+      && VBuffer [ c + 3 ] != static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER ) ) {
+    VPath.clear();
 
     return nullptr;
   }
 
   c += 4;
 
-  for( ; c < wcslen( vBuffer ); c++ ) {
-    if( vBuffer [ c ] == OPC_DATA_DIVIDER
-        && vBuffer [ c + 1 ] == OPC_DATA_DIVIDER
-        && vBuffer [ c + 2 ] == OPC_DATA_DIVIDER
-        && vBuffer [ c + 3 ] == OPC_END_DATA ) {
+  for( ; c < VBuffer.length(); c++ ) {
+    if( VBuffer [ c ] == static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+        && VBuffer [ c + 1 ] == static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+        && VBuffer [ c + 2 ] == static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+        && VBuffer [ c + 3 ] == static_cast< char32_t >( ENOpcodes::OPC_END_DATA ) ) {
       c += 3;
       break;
     } else
-      vData += vBuffer [ c ];
+      VData += VBuffer [ c ];
   }
 
-  if( vData.length() == 0 ) {
-    vPath.clear();
+  if( VData.length() == 0 ) {
+    VPath.clear();
 
     return nullptr;
   }
 
   _Index = c;
 
-  return new RFile( vPath, vData.c_str() );
+  return new RFile( VPath, VData.c_str() );
 }
 
-RFile *RPackage::fParseFile( const wchar_t *_Buffer ) const {
-  if( _Buffer [ 0 ] != OPC_START_PATH
-      && _Buffer [ 1 ] != OPC_PATH_DIVIDER
-      && _Buffer [ 2 ] != OPC_PATH_DIVIDER
-      && _Buffer [ 3 ] != OPC_PATH_DIVIDER )
+RFile *RPackage::FParseFile( const u32string &_Buffer ) const {
+  if( _Buffer [ 0 ] != static_cast< char32_t >( ENOpcodes::OPC_START_PATH )
+      && _Buffer [ 1 ] != static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+      && _Buffer [ 2 ] != static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+      && _Buffer [ 3 ] != static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER ) )
     return nullptr;
 
-  wstring vPath, vData;
+  u32string VPath, VData;
 
-  size_t c = 4;
+  uint32_t c = 4;
 
-  for( ; c < wcslen( _Buffer ); c++ ) {
-    if( _Buffer [ c ] == OPC_PATH_DIVIDER
-        && _Buffer [ c + 1 ] == OPC_PATH_DIVIDER
-        && _Buffer [ c + 2 ] == OPC_PATH_DIVIDER
-        && _Buffer [ c + 3 ] == OPC_END_PATH ) {
+  for( ; c < _Buffer.length(); c++ ) {
+    if( _Buffer [ c ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && _Buffer [ c + 1 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && _Buffer [ c + 2 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && _Buffer [ c + 3 ] == static_cast< char32_t >( ENOpcodes::OPC_END_PATH ) ) {
       c += 4;
       break;
     } else
-      vPath += _Buffer [ c ];
+      VPath += _Buffer [ c ];
   }
 
-  if( vPath.empty() )
+  if( VPath.empty() )
     return nullptr;
 
-  if( _Buffer [ c ] != OPC_START_DATA
-      && _Buffer [ c + 1 ] != OPC_DATA_DIVIDER
-      && _Buffer [ c + 2 ] != OPC_DATA_DIVIDER
-      && _Buffer [ c + 3 ] != OPC_DATA_DIVIDER ) {
-    vPath.clear();
+  if( _Buffer [ c ] != static_cast< char32_t >( ENOpcodes::OPC_START_DATA )
+      && _Buffer [ c + 1 ] != static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+      && _Buffer [ c + 2 ] != static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+      && _Buffer [ c + 3 ] != static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER ) ) {
+    VPath.clear();
 
     return nullptr;
   }
 
   c += 4;
 
-  for( ; c < wcslen( _Buffer ); c++ ) {
-    if( _Buffer [ c ] == OPC_DATA_DIVIDER
-        && _Buffer [ c + 1 ] == OPC_DATA_DIVIDER
-        && _Buffer [ c + 2 ] == OPC_DATA_DIVIDER
-        && _Buffer [ c + 3 ] == OPC_END_DATA ) {
+  for( ; c < _Buffer.length(); c++ ) {
+    if( _Buffer [ c ] == static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+        && _Buffer [ c + 1 ] == static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+        && _Buffer [ c + 2 ] == static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER )
+        && _Buffer [ c + 3 ] == static_cast< char32_t >( ENOpcodes::OPC_END_DATA ) ) {
       c += 3;
       break;
     } else
-      vData += _Buffer [ c ];
+      VData += _Buffer [ c ];
   }
 
-  if( vData.length() == 0 ) {
-    vPath.clear();
+  if( VData.length() == 0 ) {
+    VPath.clear();
 
     return nullptr;
   }
 
-  return new RFile( vPath, vData.c_str() );
+  return new RFile( VPath, VData.c_str() );
 }
 
-wstring RPackage::fParseFilePath( wifstream &_FileStream ) const {
-  wstring vPath;
+u32string RPackage::FParseFilePath( basic_ifstream<char32_t> &_FileStream ) const {
+  u32string VPath;
 
-  wchar_t vControlCharacters [ 4 ];
-  while( _FileStream.get( vControlCharacters [ 0 ] ) ) {
-    _FileStream.get( vControlCharacters [ 1 ] );
-    _FileStream.get( vControlCharacters [ 2 ] );
-    _FileStream.get( vControlCharacters [ 3 ] );
+  char32_t VControlCharacters [ 4 ];
+  while( _FileStream.get( VControlCharacters [ 0 ] ) ) {
+    _FileStream.get( VControlCharacters [ 1 ] );
+    _FileStream.get( VControlCharacters [ 2 ] );
+    _FileStream.get( VControlCharacters [ 3 ] );
 
-    if( vControlCharacters [ 0 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 1 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 2 ] == OPC_PATH_DIVIDER
-        && vControlCharacters [ 3 ] == OPC_END_PATH )
+    if( VControlCharacters [ 0 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 1 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 2 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && VControlCharacters [ 3 ] == static_cast< char32_t >( ENOpcodes::OPC_END_PATH ) )
       break;
     else {
       _FileStream.seekg( -3, ios::cur );
 
-      vPath += vControlCharacters [ 0 ];
+      VPath += VControlCharacters [ 0 ];
     }
   }
 
-  if( vPath.empty() )
-    return L"";
+  if( VPath.empty() )
+    return U"";
 
-  return vPath;
+  return VPath;
 }
 
-wstring RPackage::fParseFilePath( const wchar_t *_Buffer ) const {
-  if( _Buffer [ 0 ] != OPC_START_PATH
-      && _Buffer [ 1 ] != OPC_PATH_DIVIDER
-      && _Buffer [ 2 ] != OPC_PATH_DIVIDER
-      && _Buffer [ 3 ] != OPC_PATH_DIVIDER )
-    return L"";
+u32string RPackage::FParseFilePath( const u32string &_Buffer ) const {
+  if( _Buffer [ 0 ] != static_cast< char32_t >( ENOpcodes::OPC_START_PATH )
+      && _Buffer [ 1 ] != static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+      && _Buffer [ 2 ] != static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+      && _Buffer [ 3 ] != static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER ) )
+    return U"";
 
-  wstring vPath;
+  u32string VPath;
 
-  size_t c = 4;
+  uint32_t c = 4;
 
-  for( ; c < wcslen( _Buffer ); c++ ) {
-    if( _Buffer [ c ] == OPC_PATH_DIVIDER
-        && _Buffer [ c + 1 ] == OPC_PATH_DIVIDER
-        && _Buffer [ c + 2 ] == OPC_PATH_DIVIDER
-        && _Buffer [ c + 3 ] == OPC_END_PATH )
+  for( ; c < _Buffer.length(); c++ ) {
+    if( _Buffer [ c ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && _Buffer [ c + 1 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && _Buffer [ c + 2 ] == static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER )
+        && _Buffer [ c + 3 ] == static_cast< char32_t >( ENOpcodes::OPC_END_PATH ) )
       break;
     else
-      vPath += _Buffer [ c ];
+      VPath += _Buffer [ c ];
   }
 
-  if( vPath.empty() )
-    return L"";
+  if( VPath.empty() )
+    return U"";
 
-  return vPath;
+  return VPath;
 }
 
-wstring RPackage::fExtractFileName( const wstring _Path ) const {
-  wstring vResult;
+u32string RPackage::FExtractFileName( const u32string &_Path ) const {
+  u32string VResult;
 
-  for( size_t c = _Path.length() - 1; c > 0; c-- ) {
-    if( _Path [ c ] == L'/' )
+  for( uint32_t c = static_cast< uint32_t >( _Path.length() - 1 ); c > 0; c-- ) {
+    if( _Path [ c ] == U'/' )
       break;
     else
-      vResult.insert( vResult.begin(), _Path [ c ] );
+      VResult.insert( VResult.begin(), _Path [ c ] );
   }
 
-  return vResult;
+  return VResult;
 }
 
-wstring RPackage::fSerializeFile( const RFile *_File ) const {
-  wstring vResult;
+u32string RPackage::FSerializeFile( const RFile *_File ) const {
+  u32string VResult;
 
-  vResult += OPC_START_PATH;
-  vResult += OPC_PATH_DIVIDER;
-  vResult += OPC_PATH_DIVIDER;
-  vResult += OPC_PATH_DIVIDER;
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_START_PATH );
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER );
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER );
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER );
 
-  vResult += _File->fGetPath();
+  VResult += _File->FGetPath();
 
-  vResult += OPC_PATH_DIVIDER;
-  vResult += OPC_PATH_DIVIDER;
-  vResult += OPC_PATH_DIVIDER;
-  vResult += OPC_END_PATH;
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER );
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER );
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_PATH_DIVIDER );
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_END_PATH );
 
-  vResult += OPC_START_DATA;
-  vResult += OPC_DATA_DIVIDER;
-  vResult += OPC_DATA_DIVIDER;
-  vResult += OPC_DATA_DIVIDER;
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_START_DATA );
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER );
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER );
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER );
 
-  vResult += _File->fGetData();
+  VResult += _File->FGetData();
 
-  vResult += OPC_DATA_DIVIDER;
-  vResult += OPC_DATA_DIVIDER;
-  vResult += OPC_DATA_DIVIDER;
-  vResult += OPC_END_DATA;
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER );
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER );
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_DATA_DIVIDER );
+  VResult += static_cast< char32_t >( ENOpcodes::OPC_END_DATA );
 
-  return vResult;
+  return VResult;
 }
 
-vector<RFile *> RPackage::fGetDirectoryFiles( const RDirectory *_Directory ) const {
-  vector<RFile *> vResult;
+vector<RFile *> RPackage::FGetDirectoryFiles( const RDirectory *_Directory ) const {
+  vector<RFile *> VResult;
 
-  for( RFile *vFile : _Directory->fGetFiles() )
-    vResult.push_back( vFile );
+  for( RFile *VFile : _Directory->FGetFiles() )
+    VResult.push_back( VFile );
 
-  for( const RDirectory *vDirectory : _Directory->fGetDirectories() ) {
-    for( RFile *vFile : vDirectory->fGetFiles() )
-      vResult.push_back( vFile );
+  for( const RDirectory *VDirectory : _Directory->FGetDirectories() ) {
+    for( RFile *VFile : VDirectory->FGetFiles() )
+      VResult.push_back( VFile );
 
-    if( vDirectory->fGetDirectories().size() > 0 ) {
-      for( RFile *vFile : fGetDirectoryFiles( vDirectory ) )
-        vResult.push_back( vFile );
+    if( VDirectory->FGetDirectories().size() > 0 ) {
+      for( RFile *VFile : FGetDirectoryFiles( VDirectory ) )
+        VResult.push_back( VFile );
     }
   }
 
-  return vResult;
+  return VResult;
 }
 
-bool RPackage::fIsPathContainsDirectory( const wstring _Path, const wstring _Directory ) const {
-  for( const wstring vPathPart : fSplitPath( _Path ) ) {
-    if( vPathPart == _Directory )
+bool RPackage::FIsPathContainsDirectory( const u32string &_Path, const u32string &_Directory ) const {
+  for( const u32string VPathPart : FSplitPath( _Path ) ) {
+    if( VPathPart == _Directory )
       return true;
   }
 
   return false;
 }
 
-vector<wstring> RPackage::fSplitPath( const wstring _Path ) const {
-  vector<wstring> vPathSequence;
+vector<u32string> RPackage::FSplitPath( const u32string &_Path ) const {
+  vector<u32string> VPathSequence;
 
-  wistringstream vPathStream( _Path );
-  wstring vPathPart;
+  basic_istringstream VPathStream( _Path );
+  u32string VPathPart;
 
-  while( getline( vPathStream, vPathPart, L'/' ) ) {
-    if( !vPathPart.empty() )
-      vPathSequence.push_back( vPathPart );
+  while( getline( VPathStream, VPathPart, U'/' ) ) {
+    if( !VPathPart.empty() )
+      VPathSequence.push_back( VPathPart );
   }
 
-  return vPathSequence;
+  return VPathSequence;
 }
 
-wstring RPackage::fTruncatePath( const wstring _Path, const wstring _TargetDirectory ) const {
-  wstring vTruncatedPath;
+u32string RPackage::FTruncatePath( const u32string &_Path, const u32string &_TargetDirectory ) const {
+  u32string VTruncatedPath;
 
-  vector<wstring> vGetSplittedPath = fSplitPath( _Path );
+  vector<u32string> VGetSplittedPath = FSplitPath( _Path );
 
-  for( size_t c = 0; c < vGetSplittedPath.size(); c++ ) {
-    if( vGetSplittedPath [ c ] == _TargetDirectory ) {
-      vTruncatedPath += L"/";
-      vTruncatedPath.append( vGetSplittedPath [ c ] );
+  for( uint32_t c = 0; c < VGetSplittedPath.size(); c++ ) {
+    if( VGetSplittedPath [ c ] == _TargetDirectory ) {
+      VTruncatedPath += U"/";
+      VTruncatedPath.append( VGetSplittedPath [ c ] );
 
-      for( size_t b = c + 1; b < vGetSplittedPath.size(); b++ ) {
-        vTruncatedPath += L"/";
-        vTruncatedPath.append( vGetSplittedPath [ b ] );
+      for( uint32_t b = c + 1; b < VGetSplittedPath.size(); b++ ) {
+        VTruncatedPath += U"/";
+        VTruncatedPath.append( VGetSplittedPath [ b ] );
       }
 
       break;
     }
   }
 
-  return vTruncatedPath;
+  return VTruncatedPath;
 }
 
-enErrorCode RPackage::fCreatePath( RDirectory *&_Directory,
-                                   const vector<wstring> _PathSequence, const size_t _Depth ) const {
-  for( RDirectory *&vDirectory : _Directory->fGetDirectories() ) {
-    if( vDirectory->fGetName() == _PathSequence [ _Depth ] )
-      return fCreatePath( vDirectory, _PathSequence, _Depth + 1 );
+ENErrorCodes RPackage::FCreatePath( RDirectory *_Directory,
+                                    const vector<u32string> &_PathSequence, const uint32_t _Depth ) const {
+  for( RDirectory *VDirectory : _Directory->FGetDirectories() ) {
+    if( VDirectory->FGetName() == _PathSequence [ _Depth ] )
+      return FCreatePath( VDirectory, _PathSequence, _Depth + 1 );
   }
 
   if( _Depth == _PathSequence.size() - 1 )
-    _Directory->fAddFile( new RFile( _PathSequence [ _Depth ], L"-" ) );
+    _Directory->FAddFile( new RFile( _PathSequence [ _Depth ], U"-" ) );
   else {
-    _Directory->fAddDirectory( new RDirectory( _PathSequence [ _Depth ] ) );
+    _Directory->FAddDirectory( new RDirectory( _PathSequence [ _Depth ] ) );
 
-    return fCreatePath( _Directory, _PathSequence, _Depth );
+    return FCreatePath( _Directory, _PathSequence, _Depth );
   }
 
-  return EC_OK;
+  return ENErrorCodes::EC_OK;
 }
 
-enErrorCode RPackage::fInsertFileToDirectory( RDirectory *&_Directory,
-                                              const wstring _Name, RFile *_File ) const {
-  return _Directory->fGetDirectory( _Name, true )->fChangeFile( _File->fGetName(), _File, true ) == nullptr ? EC_INVALID_INSERT : EC_OK;
+ENErrorCodes RPackage::FInsertFileToDirectory( RDirectory *_Directory,
+                                               const u32string &_Name, RFile *_File ) const {
+  return _Directory->FGetDirectory( _Name, true )->FChangeFile( _File->FGetName(), _File, true ) == nullptr ? ENErrorCodes::EC_INVALID_INSERT : ENErrorCodes::EC_OK;
 }

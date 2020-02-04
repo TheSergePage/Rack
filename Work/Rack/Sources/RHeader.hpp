@@ -1,38 +1,47 @@
 /*
-� 2019, Dark Orb.
+© 2019, Serge Page.
 
-The license version - 1.0
+This license is hereby grants to any person who obtained a copy of this product or the product source files the next rights to:
 
-This license is hereby grants to any person who obtained a copy of this software the next rights to:
-1. Use and do reverse-engineering of compiled version of this software at no cost, without any restrictions, in non-commercial and commercial purposes
-2. Use source codes of this software at no cost but with the limitations - source codes available only for non-commercial, academic and / or scientific purposes
-3. Copy and distribute without any fee
-4. Create a copy of the original repository and / or create own derivative software for non-commercial,  academic and / or scientific purposes only
+- Use a compiled version of this product at no cost, without any restrictions, in non-commercial and commercial purposes
+- Do reverse-engineering of this product in non-commercial purposes only
+- Use source codes of this product at no cost but with the limitations - source codes available only for non-commercial, academic and / or scientific purposes
+- Copy and distribute without any fee
+- Copy of the original repository and / or create own derivative product for non-commercial,  academic and / or scientific purposes only
+- Link the product source code with an another product source code which licensed under any of Dark Orb licenses or one of these licenses:
+  - MIT License
+  - Microsoft Public License
+  - Beerware License
+  - Academic Free License
+  - WTFPL
+  - Unlicense
+  - Original BSD license
+  - Modified BSD License
+  - Simplified BSD License
+  - Zero Clause BSD
+- Link the product source code with an another product source code if between them no any patent collision
 
 This license is require to:
-1. Keep the full license text without any changes
-2. The license text must be included once in a file called 'License' which placed in the root directory of the software and in all source files of the software
+
+- Keep the full license text without any changes
+- The license text must be included once in a file called 'License' which placed in the root directory of the product and in all source files of the product
 
 This license is deny to:
-1. Change license of the derivative software
-2. Use the copyright holder name and name of any contributor of this software for advertising derivative software without legally certified permission
-3. Sell this software without an author legally certified permission
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+- Change license of the derivative product
+- Use the product’s author name and name of any contributor of this product for advertising derivative software without legally certified permission
+- Resell this product
+- Use the product or the product source code for any purpose which refers to any government of any country
+
+The product is an original source codes and original compiled files which made by the original author and provided only under the grants and restrictions of this license. All damages which can be happen after and while using the product will not be compensate.
 */
 
 #pragma once
 
 #include <string>
 
-using std::string;
-using std::wstring;
+using std::u32string;
+using std::u32string;
 
 #include <vector>
 
@@ -50,8 +59,8 @@ using std::distance;
 
 using std::ios;
 
-using std::wofstream;
-using std::wifstream;
+using std::basic_ofstream;
+using std::basic_ifstream;
 
 using std::streampos;
 
@@ -61,17 +70,13 @@ using std::filesystem::directory_options;
 using std::filesystem::recursive_directory_iterator;
 using std::filesystem::exists;
 
-using std::wistringstream;
-
 using std::getline;
+
+using std::basic_istringstream;
 
 #include <limits>
 
 using std::numeric_limits;
 
-#include <codecvt>
-
-using std::wstring_convert;
-using std::codecvt_utf8_utf16;
-
 using std::reverse;
+using std::move;

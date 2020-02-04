@@ -36,36 +36,63 @@ This license is deny to:
 The product is an original source codes and original compiled files which made by the original author and provided only under the grants and restrictions of this license. All damages which can be happen after and while using the product will not be compensate.
 */
 
-#include "rackLib.hpp"
+#pragma once
 
-using Rack::RFile;
+#include <locale>
 
-RFile::RFile() noexcept:
-  VData( nullptr ) {}
+using std::use_facet;
+using std::locale;
 
-RFile::RFile( const RFile &_Copy ) noexcept:
-  VPath( _Copy.FGetPath() ), VData( _Copy.FGetData() ) {}
+#include <codecvt>
 
-RFile::RFile( const u32string &_Path, const u32string &_Data ) noexcept:
-  VPath( _Path ), VData( _Data ) {}
+using std::codecvt;
+using std::mbstate_t;
+using std::char_traits;
 
-RFile::~RFile() {
-  FClearPath();
-  FClearData();
-}
+namespace Unicoder {
+  class UConverter {
+    public:
+    template<typename Source, typename SourceChar, typename Destination, typename DestinationChar>
+    static Destination FConvert( const Source &_Value ) {
+      const codecvt<SourceChar, DestinationChar, mbstate_t> &VConverter = use_facet<codecvt<SourceChar, DestinationChar, mbstate_t>>( locale() );
 
-vector<u32string> RFile::FSplitPath( const u32string &_Path ) const noexcept {
-  vector<u32string> VResult;
+      Destination VConvertedResult( _Value.length(), static_cast< DestinationChar>(0) );
 
-  u32string VPart;
-  for( const char32_t VCharacter : _Path ) {
-    if( VCharacter == path::preferred_separator ) {
-      VResult.insert( VResult.end(), VPart );
-      VPart.clear();
-    } else {
-      VPart += VCharacter;
+      mbstate_t VInitialState = mbstate_t();
+
+      const SourceChar *VMid1;
+      DestinationChar *VMid2;
+
+      VConverter.out( VInitialState, &_Value [ 0 ], &_Value [ _Value.length() ], VMid1,
+                                 &VConvertedResult [ 0 ], &VConvertedResult [ VConvertedResult.length() ], VMid2 );
+
+      VConvertedResult.resize( VMid2 - &VConvertedResult [ 0 ] );
+
+      return VConvertedResult;
     }
-  }
 
-  return VResult;
+    template<typename SourceChar, typename DestinationChar>
+    static DestinationChar *FConvertRaw( const SourceChar *_Value ) {
+      const codecvt<SourceChar, DestinationChar, mbstate_t> &VConverter = use_facet<codecvt<SourceChar, DestinationChar, mbstate_t>>( locale() );
+
+      uint64_t VValueLength = char_traits<SourceChar>::length( _Value );
+
+      DestinationChar *VConvertedResult = new DestinationChar [ VValueLength ];
+      DestinationChar VInitialChar = static_cast< DestinationChar >( 0 );
+
+      for( uint64_t c = 0; c < VValueLength; c++ ) {
+        VConvertedResult [ c ] = VInitialChar;
+      }
+
+      mbstate_t VInitialState = mbstate_t();
+
+      const SourceChar *VMid1;
+      DestinationChar *VMid2;
+
+      VConverter.out( VInitialState, &_Value [ 0 ], &_Value [ VValueLength ], VMid1,
+                      &VConvertedResult [ 0 ], &VConvertedResult [ VValueLength ], VMid2 );
+
+      return VConvertedResult;
+    }
+  };
 }

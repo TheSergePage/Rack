@@ -1,35 +1,54 @@
 /*
-� 2019, Dark Orb.
+© 2019, Serge Page.
 
-The license version - 1.0
+This license is hereby grants to any person who obtained a copy of this product or the product source files the next rights to:
 
-This license is hereby grants to any person who obtained a copy of this software the next rights to:
-1. Use and do reverse-engineering of compiled version of this software at no cost, without any restrictions, in non-commercial and commercial purposes
-2. Use source codes of this software at no cost but with the limitations - source codes available only for non-commercial, academic and / or scientific purposes
-3. Copy and distribute without any fee
-4. Create a copy of the original repository and / or create own derivative software for non-commercial,  academic and / or scientific purposes only
+- Use a compiled version of this product at no cost, without any restrictions, in non-commercial and commercial purposes
+- Do reverse-engineering of this product in non-commercial purposes only
+- Use source codes of this product at no cost but with the limitations - source codes available only for non-commercial, academic and / or scientific purposes
+- Copy and distribute without any fee
+- Copy of the original repository and / or create own derivative product for non-commercial,  academic and / or scientific purposes only
+- Link the product source code with an another product source code which licensed under any of Dark Orb licenses or one of these licenses:
+  - MIT License
+  - Microsoft Public License
+  - Beerware License
+  - Academic Free License
+  - WTFPL
+  - Unlicense
+  - Original BSD license
+  - Modified BSD License
+  - Simplified BSD License
+  - Zero Clause BSD
+- Link the product source code with an another product source code if between them no any patent collision
 
 This license is require to:
-1. Keep the full license text without any changes
-2. The license text must be included once in a file called 'License' which placed in the root directory of the software and in all source files of the software
+
+- Keep the full license text without any changes
+- The license text must be included once in a file called 'License' which placed in the root directory of the product and in all source files of the product
 
 This license is deny to:
-1. Change license of the derivative software
-2. Use the copyright holder name and name of any contributor of this software for advertising derivative software without legally certified permission
-3. Sell this software without an author legally certified permission
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+- Change license of the derivative product
+- Use the product’s author name and name of any contributor of this product for advertising derivative software without legally certified permission
+- Resell this product
+- Use the product or the product source code for any purpose which refers to any government of any country
+
+The product is an original source codes and original compiled files which made by the original author and provided only under the grants and restrictions of this license. All damages which can be happen after and while using the product will not be compensate.
 */
 
 #include <RackLib.hpp>
 
 using namespace Rack;
+
+#include "Unicoder.hpp"
+
+using namespace Unicoder;
+
+#include <string>
+
+using std::wstring;
+
+using std::to_wstring;
 
 #include <iostream>
 
@@ -38,167 +57,183 @@ using std::endl;
 
 using std::move;
 
-wstring_convert<codecvt_utf8_utf16<wchar_t>> vConverter;
+void FPrintMessage( const u32string &_Text, const bool _NewLine = true, const bool _DoubleNewLine = false, const bool _OnlyNewLine = false ) {
+  if( _OnlyNewLine ) {
+    wcout << endl;
 
-void fInsertAlign( const size_t _Level ) {
-  for( size_t c = 0; c < _Level; c++ )
+    return;
+  }
+
+  if( _NewLine ) {
+    if( _DoubleNewLine ) {
+      wcout << UConverter::FConvert<u32string, char32_t, wstring, wchar_t>( _Text ) << endl << endl;
+    } else {
+      wcout << UConverter::FConvert<u32string, char32_t, wstring, wchar_t>( _Text ) << endl;
+    }
+  } else {
+    wcout << UConverter::FConvert<u32string, char32_t, wstring, wchar_t>( _Text );
+  }
+}
+
+void fInsertAlign( const uint32_t _Level ) {
+  for( uint32_t c = 0; c < _Level; c++ )
     wcout << L" ";
 }
 
-void fShowFile( const RFile *_File, const size_t _Level ) {
+void fShowFile( const RFile *_File, const uint32_t _Level ) {
   fInsertAlign( _Level );
-  wcout << L"File name - " << _File->fGetName() << endl;
+  FPrintMessage( U"File name - " + _File->FGetName() );
 
   fInsertAlign( _Level );
-  wcout << L"File extension - " << _File->fGetExtension() << endl;
+  FPrintMessage( U"File extension - " + _File->FGetExtension() );
 
   fInsertAlign( _Level );
-  wcout << L"File root directory - " << _File->fGetRootDirectory() << endl;
+  FPrintMessage( U"File root directory - " + _File->FGetRootDirectory() );
 
   fInsertAlign( _Level );
-  wcout << L"File relative path - " << _File->fGetRelativePath() << endl << endl;
+  FPrintMessage( U"File relative path - " + _File->FGetRelativePath(), true, true );
 
   fInsertAlign( _Level );
-  wcout << L"File content - " << _File->fGetData() << endl << endl;
+  FPrintMessage( U"File content - " + _File->FGetData(), true, true );
 }
 
-void fShowDirectory( const RDirectory *_Directory, const size_t _Level ) {
+void fShowDirectory( const RDirectory *_Directory, const uint32_t _Level ) {
   fInsertAlign( _Level );
-  wcout << L"Directory name - " << _Directory->fGetName() << endl;
+  FPrintMessage( U"Directory name - " + _Directory->FGetName() );
 
   fInsertAlign( _Level );
-  wcout << L"-----------" << endl;
+  FPrintMessage( U"-----------" );
 
   fInsertAlign( _Level );
-  wcout << L"Inner files:";
+  FPrintMessage( U"Inner files:", false );
 
-  if( _Directory->fGetFiles().size() == 0 )
-    wcout << L" Have no files" << endl;
+  if( _Directory->FGetFiles().size() == 0 )
+    FPrintMessage( U" Have no files" );
   else {
-    wcout << endl;
+    FPrintMessage( U"", false, false, true );
 
-    for( const RFile *vFile : _Directory->fGetFiles() )
-      fShowFile( vFile, _Level + 1 );
+    for( const RFile *VFile : _Directory->FGetFiles() )
+      fShowFile( VFile, _Level + 1 );
   }
 
   fInsertAlign( _Level );
-  wcout << L"-----------" << endl;
+  FPrintMessage( U"-----------" );
 
   fInsertAlign( _Level );
-  wcout << L"Inner directories:";
+  FPrintMessage( U"Inner directories:", false );
 
-  if( _Directory->fGetDirectories().size() == 0 )
-    wcout << L" Have no directories" << endl;
+  if( _Directory->FGetDirectories().size() == 0 )
+    FPrintMessage( U" Have no directories" );
   else {
-    wcout << endl;
+    FPrintMessage( U"", false, false, true );
 
-    for( const RDirectory *vDirectory : _Directory->fGetDirectories() )
-      fShowDirectory( vDirectory, _Level + 1 );
+    for( const RDirectory *VDirectory : _Directory->FGetDirectories() )
+      fShowDirectory( VDirectory, _Level + 1 );
   }
 }
 
 void fShowHowToUse() {
-  wcout << L"How to use:" << endl;
-  wcout << L"-cmd - command[LightLoad/FullLoad/ReadStructure/Create/Change/ExtractFile/ExtractDirectory]" << endl << endl;
+  FPrintMessage( U"How to use:" );
+  FPrintMessage( U"!Command - command[LightLoad/FullLoad/ReadStructure/Create/Change/ExtractFile/ExtractDirectory]", true, true );
 
-  wcout << L"-lpath - path to the file for load" << endl;
-  wcout << L"-spath - path to the file or folder for save" << endl << endl;
+  FPrintMessage( U"!LoadPath - path to the file for load" );
+  FPrintMessage( U"!SavePath - path to the file or folder for save", true, true );
 
-  wcout << L"-tf - target file for extracting or changing" << endl;
-  wcout << L"-td - target directory for extracting" << endl << endl;
+  FPrintMessage( U"!TargetFile - target file for extracting or changing" );
+  FPrintMessage( U"!TargetDirectory - target directory for extracting", true, true );
 }
 
-void fShowPackage( RPackage &_Packager, const wstring _Path ) {
-  wcout << L"Flat data: ";
+void fShowPackage( RPackage &_Packager, const u32string _Path ) {
+  FPrintMessage( U"Flat data: ", false );
 
-  if( _Packager.fGetFlatData().size() == 0 )
-    wcout << L"Have no flat data" << endl;
+  if( _Packager.FGetFlatData().size() == 0 )
+    FPrintMessage( U"Have no flat data" );
   else {
-    wcout << endl;
+    FPrintMessage( U"", false, false, true );
 
-    for( const RFile *vFile : _Packager.fGetFlatData() )
-      fShowFile( vFile, 1 );
+    for( const RFile *VFile : _Packager.FGetFlatData() )
+      fShowFile( VFile, 1 );
   }
 
-  wcout << L"*************************" << endl;
+  FPrintMessage( U"*************************" );
 
-  wcout << L"Structure: ";
+  FPrintMessage( U"Structure: ", false );
 
-  RDirectory *vRootDirectory = new RDirectory( L"Root" );
+  RDirectory *VRootDirectory = new RDirectory( U"Root" );
 
-  enErrorCode vReadStructureResult = _Packager.fReadStructure( _Path, vRootDirectory );
+  ENErrorCodes VReadStructureResult = _Packager.FReadStructure( _Path, VRootDirectory );
 
-  if( vReadStructureResult != EC_OK )
-    wcout << L"Invalid reading structure. Code - " << vReadStructureResult << endl;
+  if( VReadStructureResult != ENErrorCodes::EC_OK )
+    FPrintMessage( U"Invalid reading structure. Code - " + UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( to_wstring( static_cast< int64_t >( VReadStructureResult ) ) ) );
   else {
-    wcout << endl;
+    FPrintMessage( U"", false, false, true );
 
-    fShowDirectory( vRootDirectory, 0 );
+    fShowDirectory( VRootDirectory, 0 );
   }
 
-  wcout << L"=========================" << endl;
+  FPrintMessage( U"=========================" );
 }
 
-int __cdecl main( int argc, char **argv ) {
-  wcout << L">>>Rack Console 2.1" << endl;
-  wcout << L">>>Rack Lib 2.1" << endl << endl;
+int __cdecl wmain( int argc, wchar_t *argv[], wchar_t *envp[] ) {
+  FPrintMessage( U"Rack Console 2.1" );
+  FPrintMessage( U"Rack Lib 2.1", true, true );
 
-  wcout << L"=========================" << endl << endl;
+  FPrintMessage( U"---------------------", true, true );
 
   if( argc == 1 ) {
     fShowHowToUse();
     return 0;
   }
 
-  size_t vCommand = 0;
+  uint32_t VCommand = 0;
 
-  wstring vLoadPath, vSavePath;
-  wstring vTargetFile, vTargetDirectory;
+  u32string VLoadPath, VSavePath;
+  u32string VTargetFile, VTargetDirectory;
 
-  for( size_t c = 1; c < static_cast< size_t >( argc ); c++ ) {
-    if( strcmp( argv [ c ], "-cmd" ) == 0 ) {
-      if( strcmp( argv [ c + 1 ], "LightLoad" ) == 0 ) {
+  for( uint32_t c = 1; c < static_cast< uint32_t >( argc ); c++ ) {
+    if( wcscmp( argv [ c ], L"!Command" ) == 0 ) {
+      if( wcscmp( argv [ c + 1 ], L"LightLoad" ) == 0 ) {
         ++c;
-        vCommand = 0;
-      } else if( strcmp( argv [ c + 1 ], "FullLoad" ) == 0 ) {
+        VCommand = 0;
+      } else if( wcscmp( argv [ c + 1 ], L"FullLoad" ) == 0 ) {
         ++c;
-        vCommand = 1;
-      } else if( strcmp( argv [ c + 1 ], "ReadStructure" ) == 0 ) {
+        VCommand = 1;
+      } else if( wcscmp( argv [ c + 1 ], L"ReadStructure" ) == 0 ) {
         ++c;
-        vCommand = 2;
-      } else if( strcmp( argv [ c + 1 ], "Create" ) == 0 ) {
+        VCommand = 2;
+      } else if( wcscmp( argv [ c + 1 ], L"Create" ) == 0 ) {
         ++c;
-        vCommand = 3;
-      } else if( strcmp( argv [ c + 1 ], "Change" ) == 0 ) {
+        VCommand = 3;
+      } else if( wcscmp( argv [ c + 1 ], L"Change" ) == 0 ) {
         ++c;
-        vCommand = 4;
-      } else if( strcmp( argv [ c + 1 ], "ExtractFile" ) == 0 ) {
+        VCommand = 4;
+      } else if( wcscmp( argv [ c + 1 ], L"ExtractFile" ) == 0 ) {
         ++c;
-        vCommand = 5;
-      } else if( strcmp( argv [ c + 1 ], "ExtractDirectory" ) == 0 ) {
+        VCommand = 5;
+      } else if( wcscmp( argv [ c + 1 ], L"ExtractDirectory" ) == 0 ) {
         ++c;
-        vCommand = 6;
+        VCommand = 6;
       } else {
-        wcout << L">>>Invalid argument value. Argument - cmd : " << argv [ c + 1 ] << endl;
+        FPrintMessage( U"Invalid argument Value. Argument - cmd : " + UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( argv [ c + 1 ] ) );
 
-        wcout << L"=========================" << endl;
+        FPrintMessage( U"---------------------", true, true );
 
         fShowHowToUse();
 
         return -1;
       }
-    } else if( strcmp( argv [ c ], "-lpath" ) == 0 ) {
-      vLoadPath = vConverter.from_bytes( argv [ ++c ] );
-    } else if( strcmp( argv [ c ], "-spath" ) == 0 ) {
-      vSavePath = vConverter.from_bytes( argv [ ++c ] );
-    } else if( strcmp( argv [ c ], "-tf" ) == 0 ) {
-      vTargetFile = vConverter.from_bytes( argv [ ++c ] );
-    } else if( strcmp( argv [ c ], "-td" ) == 0 ) {
-      vTargetDirectory = vConverter.from_bytes( argv [ ++c ] );
+    } else if( wcscmp( argv [ c ], L"!LoadPath" ) == 0 ) {
+      VLoadPath = UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( argv [ ++c ] );
+    } else if( wcscmp( argv [ c ], L"!SavePath" ) == 0 ) {
+      VSavePath = UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( argv [ ++c ] );
+    } else if( wcscmp( argv [ c ], L"!TargetFile" ) == 0 ) {
+      VTargetFile = UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( argv [ ++c ] );
+    } else if( wcscmp( argv [ c ], L"!TargetDirectory" ) == 0 ) {
+      VTargetDirectory = UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( argv [ ++c ] );
     } else {
-      wcout << L">>>Unknown argument. Argument - " << argv [ c ] << endl;
+      FPrintMessage( U"Unknown argument. Argument - " + UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( argv [ c ] ) );
 
-      wcout << L"=========================" << endl;
+      FPrintMessage( U"---------------------", true, true );
 
       fShowHowToUse();
 
@@ -206,224 +241,224 @@ int __cdecl main( int argc, char **argv ) {
     }
   }
 
-  RPackage vPackager;
+  RPackage VPackager;
 
-  vector<RFile *> vFiles;
-  RDirectory *vRootDirectory;
-  switch( vCommand ) {
+  vector<RFile *> VFiles;
+  RDirectory *VRootDirectory;
+  switch( VCommand ) {
     //LightLoad
     case 0:
     {
-      if( vLoadPath.empty() ) {
-        wcout << L">>>Load path is empty" << endl;
+      if( VLoadPath.empty() ) {
+        FPrintMessage( U"Load path is empty" );
 
-        wcout << L"=========================" << endl;
+        FPrintMessage( U"---------------------", true, true );
 
         fShowHowToUse();
 
         return -1;
       }
 
-      wcout << L"Load result - " << vPackager.fLoadPackage( vLoadPath ) << endl << endl;
+      FPrintMessage( U"Load result - " + UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( to_wstring( static_cast< int64_t >( VPackager.FLoadPackage( VLoadPath ) ) ) ), true, true );
 
-      fShowPackage( vPackager, vLoadPath );
+      fShowPackage( VPackager, VLoadPath );
 
-      wcout << endl;
+      FPrintMessage( U"", false, false, true );
     }
     break;
 
     //FullLoad
     case 1:
     {
-      if( vLoadPath.empty() ) {
-        wcout << L">>>Load path is empty" << endl;
+      if( VLoadPath.empty() ) {
+        FPrintMessage( U"Load path is empty" );
 
-        wcout << L"=========================" << endl;
+        FPrintMessage( U"---------------------", true, true );
 
         fShowHowToUse();
 
         return -1;
       }
 
-      wcout << L"Load result - " << vPackager.fFullLoadPackage( vLoadPath ) << endl << endl;
+      FPrintMessage( U"Load result - " + UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( to_wstring( static_cast< int64_t >( VPackager.FFullLoadPackage( VLoadPath ) ) ) ), true, true );
 
-      fShowPackage( vPackager, vLoadPath );
+      fShowPackage( VPackager, VLoadPath );
 
-      wcout << endl;
+      FPrintMessage( U"", false, false, true );
     }
     break;
 
     //ReadStructure
     case 2:
     {
-      if( vLoadPath.empty() ) {
-        wcout << L">>>Load path is empty" << endl;
+      if( VLoadPath.empty() ) {
+        FPrintMessage( U"Load path is empty" );
 
-        wcout << L"=========================" << endl;
+        FPrintMessage( U"---------------------", true, true );
 
         fShowHowToUse();
 
         return -1;
       }
 
-      vRootDirectory = new RDirectory( L"Root" );
+      VRootDirectory = new RDirectory( U"Root" );
 
-      enErrorCode vReadStructureResult = vPackager.fReadStructure( vLoadPath, vRootDirectory );
+      ENErrorCodes VReadStructureResult = VPackager.FReadStructure( VLoadPath, VRootDirectory );
 
-      if( vReadStructureResult != EC_OK )
-        wcout << L"Invalid reading structure. Code - " << vReadStructureResult << endl;
+      if( VReadStructureResult != ENErrorCodes::EC_OK )
+        FPrintMessage( U"Invalid reading structure. Code - " + UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( to_wstring( static_cast< int64_t >( VReadStructureResult ) ) ) );
       else {
-        wcout << endl;
+        FPrintMessage( U"", false, false, true );
 
-        fShowDirectory( vRootDirectory, 0 );
+        fShowDirectory( VRootDirectory, 0 );
 
-        wcout << endl;
+        FPrintMessage( U"", false, false, true );
       }
 
-      delete vRootDirectory;
+      delete VRootDirectory;
     }
     break;
 
     //Create
     case 3:
     {
-      if( vSavePath.empty() ) {
-        wcout << L">>>Save path is empty" << endl;
+      if( VSavePath.empty() ) {
+        FPrintMessage( U"Save path is empty" );
 
-        wcout << L"=========================" << endl;
+        FPrintMessage( U"---------------------", true, true );
 
         fShowHowToUse();
 
         return -1;
       }
 
-      vFiles.push_back( new RFile( L"Messages/Hello_World.txt", L"Hello World!" ) );
-      vFiles.push_back( new RFile( L"Messages/Question1.txt", L"How are you?" ) );
-      vFiles.push_back( new RFile( L"Messages/Answer1.txt", L"I'm fine." ) );
+      VFiles.push_back( new RFile( U"Messages/Hello_World.txt", U"Hello World!" ) );
+      VFiles.push_back( new RFile( U"Messages/Question1.txt", U"How are you?" ) );
+      VFiles.push_back( new RFile( U"Messages/Answer1.txt", U"I'm fine." ) );
 
-      vFiles.push_back( new RFile( L"Another messages/Question1.txt", L"And you?" ) );
-      vFiles.push_back( new RFile( L"Another messages/Replies/Reply1.txt", L"The same" ) );
+      VFiles.push_back( new RFile( U"Another messages/Question1.txt", U"And you?" ) );
+      VFiles.push_back( new RFile( U"Another messages/Replies/Reply1.txt", U"The same" ) );
 
-      wcout << L"Create package result - " << vPackager.fCreatePackage( vSavePath, vFiles ) << endl;
+      FPrintMessage( U"Create package result - " + UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( to_wstring( static_cast< int64_t >( VPackager.FCreatePackage( VSavePath, VFiles ) ) ) ) );
     }
     break;
 
     //Change
     case 4:
     {
-      if( vLoadPath.empty() ) {
-        wcout << L">>>Load path is empty" << endl;
+      if( VLoadPath.empty() ) {
+        FPrintMessage( U"Load path is empty" );
 
-        wcout << L"=========================" << endl;
-
-        fShowHowToUse();
-
-        return -1;
-      }
-
-      if( vSavePath.empty() ) {
-        wcout << L">>>Save path is empty" << endl;
-
-        wcout << L"=========================" << endl;
+        FPrintMessage( U"---------------------", true, true );
 
         fShowHowToUse();
 
         return -1;
       }
 
-      if( vTargetFile.empty() ) {
-        wcout << L">>>Target file name is empty" << endl;
+      if( VSavePath.empty() ) {
+        FPrintMessage( U">>>Save path is empty" );
 
-        wcout << L"=========================" << endl;
+        FPrintMessage( U"---------------------", true, true );
 
         fShowHowToUse();
 
         return -1;
       }
 
-      wcout << L"Load result - " << vPackager.fFullLoadPackage( vLoadPath, vFiles ) << endl;
+      if( VTargetFile.empty() ) {
+        FPrintMessage( U">>>Target file name is empty" );
 
-      for( RFile *&vFile : vFiles ) {
-        if( vFile->fGetName() == vTargetFile ) {
-          vFile->fSetData( L"Here's a new data" );
+        FPrintMessage( U"---------------------", true, true );
+
+        fShowHowToUse();
+
+        return -1;
+      }
+
+      FPrintMessage( U"Load result - " + UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( to_wstring( static_cast< int64_t >( VPackager.FFullLoadPackage( VLoadPath, VFiles ) ) ) ) );
+
+      for( RFile *VFile : VFiles ) {
+        if( VFile->FGetName() == VTargetFile ) {
+          VFile->FSetData( U"Here's a new data" );
 
           break;
         }
       }
 
-      wcout << L"Save result - " << vPackager.fSavePackage( vSavePath, vFiles ) << endl;
+      FPrintMessage( U"Save result - " + UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( to_wstring( static_cast< int64_t >( VPackager.FSavePackage( VSavePath, VFiles ) ) ) ) );
     }
     break;
 
     //ExtractFile
     case 5:
     {
-      if( vLoadPath.empty() ) {
-        wcout << L">>>Load path is empty" << endl;
+      if( VLoadPath.empty() ) {
+        FPrintMessage( U"Load path is empty" );
 
-        wcout << L"=========================" << endl;
-
-        fShowHowToUse();
-
-        return -1;
-      }
-
-      if( vTargetFile.empty() ) {
-        wcout << L">>>Target file name is empty" << endl;
-
-        wcout << L"=========================" << endl;
+        FPrintMessage( U"---------------------", true, true );
 
         fShowHowToUse();
 
         return -1;
       }
 
-      RFile *vExtractedFile = new RFile();
+      if( VTargetFile.empty() ) {
+        FPrintMessage( U"Target file name is empty" );
 
-      wcout << L"Load result - " << vPackager.fExtractFile( vLoadPath, vTargetFile, vExtractedFile ) << endl;
+        FPrintMessage( U"---------------------", true, true );
 
-      wcout << L"Extracted file:" << endl;
+        fShowHowToUse();
 
-      fShowFile( vExtractedFile, 0 );
+        return -1;
+      }
 
-      wcout << endl;
+      RFile *VExtractedFile = new RFile();
+
+      FPrintMessage( U"Load result - " + UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( to_wstring( static_cast< int64_t >( VPackager.FExtractFile( VLoadPath, VTargetFile, VExtractedFile ) ) ) ) );
+
+      FPrintMessage( U"Extracted file:" );
+
+      fShowFile( VExtractedFile, 0 );
+
+      FPrintMessage( U"", false, false, true );
     }
     break;
 
     //ExtractDirectory
     case 6:
     {
-      if( vLoadPath.empty() ) {
-        wcout << L">>>Load path is empty" << endl;
+      if( VLoadPath.empty() ) {
+        FPrintMessage( U"Load path is empty" );
 
-        wcout << L"=========================" << endl;
-
-        fShowHowToUse();
-
-        return -1;
-      }
-
-      if( vTargetDirectory.empty() ) {
-        wcout << L">>>Target directory name is empty" << endl;
-
-        wcout << L"=========================" << endl;
+        FPrintMessage( U"---------------------", true, true );
 
         fShowHowToUse();
 
         return -1;
       }
 
-      vRootDirectory = new RDirectory( L"Root" );
+      if( VTargetDirectory.empty() ) {
+        FPrintMessage( U"Target directory name is empty" );
 
-      wcout << L"Load result - " << vPackager.fExtractDirectory( vLoadPath, vTargetDirectory, vRootDirectory ) << endl;
+        FPrintMessage( U"---------------------", true, true );
 
-      wcout << L"Extracted directory:" << endl;
+        fShowHowToUse();
 
-      fShowDirectory( vRootDirectory, 0 );
+        return -1;
+      }
 
-      delete vRootDirectory;
+      VRootDirectory = new RDirectory( U"Root" );
 
-      wcout << endl;
+      FPrintMessage( U"Load result - " + UConverter::FConvert<wstring, wchar_t, u32string, char32_t>( to_wstring( static_cast< int64_t >( VPackager.FExtractDirectory( VLoadPath, VTargetDirectory, VRootDirectory ) ) ) ) );
+
+      FPrintMessage( U"Extracted directory:" );
+
+      fShowDirectory( VRootDirectory, 0 );
+
+      delete VRootDirectory;
+
+      FPrintMessage( U"", false, false, true );
     }
     break;
   }

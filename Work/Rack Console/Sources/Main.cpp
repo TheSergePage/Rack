@@ -175,8 +175,8 @@ void fShowPackage( RPackage &_Packager, const u32string _Path ) {
 }
 
 int __cdecl wmain( int argc, wchar_t *argv[], wchar_t *envp[] ) {
-  FPrintMessage( U"Rack Console 2.1" );
-  FPrintMessage( U"Rack Lib 2.1", true, true );
+  FPrintMessage( U"Rack Console 3.0" );
+  FPrintMessage( U"Rack Lib 3.0", true, true );
 
   FPrintMessage( U"---------------------", true, true );
 
